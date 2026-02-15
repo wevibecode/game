@@ -366,8 +366,10 @@ function _update()
  -- apply thrust
  local do_thrust=(demo_mode and demo_thrust) or (not demo_mode and btn(4))
  if do_thrust and ship.fuel>0 then
-  ship.vx+=cos(ship.angle)*ship.thrust
-  ship.vy+=sin(ship.angle)*ship.thrust
+  -- ai uses reduced thrust for better control
+  local thrust_power=demo_mode and ship.thrust*0.5 or ship.thrust
+  ship.vx+=cos(ship.angle)*thrust_power
+  ship.vy+=sin(ship.angle)*thrust_power
   ship.fuel-=0.5
 
   -- spawn thrust particle
