@@ -452,22 +452,11 @@ function _update()
        -- accelerate toward player
        if (dx>0 and base_spd>0) or (dx<0 and base_spd<0) then
         base_spd=base_spd*1.8
-        obs.col=14 -- flash yellow when hunting
-       else
-        obs.col=8 -- red when not aligned
        end
        obs.hunt_cd=15 -- cooldown
-      else
-       obs.col=8 -- normal red
       end
      else
       obs.hunt_cd=max(0,obs.hunt_cd-1)
-      -- restore original color based on hp
-      if obs.hp<obs.max_hp then
-       obs.col=7 -- white when damaged
-      else
-       obs.col=obs.hunt and 8 or 6
-      end
      end
 
      -- wobble movement for unpredictability
