@@ -571,6 +571,11 @@ function _draw()
  local vel=sqrt(ship.vx*ship.vx+ship.vy*ship.vy)
  print("vel:"..flr(vel*10)/10,2,20,6)
 
+ -- speedometer in bottom right
+ local speed_display=flr(vel*10)/10
+ print("speed",96,114,6)
+ print(speed_display,102,120,11)
+
  -- controls hint
  if demo_mode then
   print("demo mode - press any key",4,120,10)
