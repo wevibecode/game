@@ -8,7 +8,7 @@ __lua__
 ship={
  x=64,
  y=30,
- vx=1.2, -- velocity x
+ vx=0.6, -- velocity x
  vy=0, -- velocity y
  angle=0,
  thrust=0.08,
@@ -63,7 +63,7 @@ function init_level()
  trail={}
  ship.x=64
  ship.y=20
- ship.vx=1.2
+ ship.vx=0.6
  ship.vy=0
  ship.angle=0
  ship.fuel=100
