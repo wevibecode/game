@@ -484,6 +484,8 @@ function _update()
   won=true
   score+=100
   score+=flr(ship.fuel)
+  -- refill fuel when landing on goal
+  ship.fuel=ship.max_fuel
  end
 end
 
