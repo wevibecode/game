@@ -189,14 +189,18 @@ function _update()
   local goal_dy=goal.y-ship.y
   local dist_to_goal=sqrt(goal_dx*goal_dx+goal_dy*goal_dy)
 
+  -- calculate current speed for safety checks
+  local speed=sqrt(ship.vx*ship.vx+ship.vy*ship.vy)
+
   -- check for danger (collision threats)
   local danger_x=0
   local danger_y=0
   local in_danger=false
 
-  -- predict future position
-  local future_x=ship.x+ship.vx*5
-  local future_y=ship.y+ship.vy*5
+  -- predict future position (more frames for high speed)
+  local prediction_frames=max(10,speed*8)
+  local future_x=ship.x+ship.vx*prediction_frames
+  local future_y=ship.y+ship.vy*prediction_frames
 
   -- check planet collisions
   for p in all(planets) do
@@ -207,13 +211,33 @@ function _update()
    local future_dy=p.y-future_y
    local future_dist=sqrt(future_dx*future_dx+future_dy*future_dy)
 
-   -- if too close or heading toward planet
-   local danger_threshold=p.r+10
-   if dist<danger_threshold or future_dist<p.r+5 then
+   -- dynamic danger threshold based on speed
+   local danger_threshold=p.r+15+speed*3
+
+   -- check if velocity is pointing toward planet
+   local vel_toward_planet=0
+   if speed>0.1 then
+    local vel_angle=atan2(ship.vx,ship.vy)
+    local planet_angle=atan2(dx,dy)
+    local angle_diff=abs(vel_angle-planet_angle)
+    if angle_diff>0.5 then angle_diff=1-angle_diff end
+    -- if heading toward planet (angle diff < 0.25 = 90 degrees)
+    if angle_diff<0.25 then
+     vel_toward_planet=1-angle_diff*4
+    end
+   end
+
+   -- danger if: too close, heading toward, or future collision
+   if dist<danger_threshold or future_dist<p.r+8 or
+      (vel_toward_planet>0.3 and dist<p.r+25) then
     in_danger=true
     -- create repulsion vector away from planet
-    danger_x-=dx/dist
-    danger_y-=dy/dist
+    -- stronger repulsion when very close or moving fast
+    local repulsion_strength=1
+    if dist<p.r+12 then repulsion_strength=3 end
+    if vel_toward_planet>0.5 then repulsion_strength*=2 end
+    danger_x-=(dx/dist)*repulsion_strength
+    danger_y-=(dy/dist)*repulsion_strength
    end
   end
 
@@ -236,14 +260,28 @@ function _update()
    danger_y-=1
   end
 
+  -- velocity limits based on situation
+  local max_speed=2.5
+  if dist_to_goal<30 then
+   max_speed=1.5 -- slower near goal
+  end
+
   -- calculate desired velocity (velocity needed to reach goal)
-  local desired_vx=goal_dx*0.1
-  local desired_vy=goal_dy*0.1
+  local desired_vx=goal_dx*0.08
+  local desired_vy=goal_dy*0.08
 
   -- if in danger, prioritize escape over goal
   if in_danger then
-   desired_vx=danger_x*2
-   desired_vy=danger_y*2
+   desired_vx=danger_x*3
+   desired_vy=danger_y*3
+   max_speed=1.8 -- limit speed when escaping
+  else
+   -- limit desired velocity to max_speed
+   local desired_speed=sqrt(desired_vx*desired_vx+desired_vy*desired_vy)
+   if desired_speed>max_speed then
+    desired_vx=(desired_vx/desired_speed)*max_speed
+    desired_vy=(desired_vy/desired_speed)*max_speed
+   end
   end
 
   -- calculate velocity error
@@ -284,21 +322,31 @@ function _update()
    demo_turn=1
   end
 
-  -- calculate current speed
-  local speed=sqrt(ship.vx*ship.vx+ship.vy*ship.vy)
-
   -- thrust conditions:
   -- 1. must be aimed in the right direction
   -- 2. must have fuel
   -- 3. must need velocity correction (not moving perfectly)
-  -- 4. not too close to goal at high speed (brake!)
+  -- 4. apply velocity limiting
   local vel_error_mag=sqrt(vel_error_x*vel_error_x+vel_error_y*vel_error_y)
   local should_thrust=false
 
+  -- check if we're moving too fast
+  local too_fast=speed>max_speed
+
   if ship.fuel>5 and abs(angle_diff)<0.15 then
    if in_danger then
-    -- in danger: always thrust to escape
+    -- in danger: always thrust to escape if aimed right way
     should_thrust=true
+   elseif too_fast then
+    -- moving too fast: only thrust if it will slow us down
+    -- check if thrust direction opposes velocity
+    local vel_angle=atan2(ship.vx,ship.vy)
+    local thrust_vel_diff=abs(ship.angle-vel_angle)
+    if thrust_vel_diff>0.5 then thrust_vel_diff=1-thrust_vel_diff end
+    -- if thrust is opposite to velocity (>90 degrees)
+    if thrust_vel_diff>0.25 then
+     should_thrust=true
+    end
    elseif dist_to_goal>goal.r*2 then
     -- far from goal: thrust if we need velocity correction
     if vel_error_mag>0.2 then
@@ -306,7 +354,7 @@ function _update()
     end
    else
     -- close to goal: only thrust if moving too fast
-    if speed>1.5 then
+    if speed>1.2 then
      should_thrust=true
     end
    end
