@@ -418,6 +418,60 @@ function _update()
   end
  end
 
+ -- collision avoidance: apply perpendicular thrust if trajectory intersects planet
+ for p in all(planets) do
+  -- vector from planet to ship
+  local dx=ship.x-p.x
+  local dy=ship.y-p.y
+
+  -- project velocity onto the planet-ship vector
+  local dot=dx*ship.vx+dy*ship.vy
+
+  -- if moving toward planet (negative dot product)
+  if dot<0 then
+   local dist_sq=dx*dx+dy*dy
+   local vel_sq=ship.vx*ship.vx+ship.vy*ship.vy
+
+   if vel_sq>0.01 then
+    -- calculate closest approach distance using trajectory projection
+    local closest_dist_sq=dist_sq-(dot*dot)/vel_sq
+
+    -- if trajectory passes within planet radius (with margin)
+    local safe_radius=p.r+3
+    if closest_dist_sq<safe_radius*safe_radius then
+     -- calculate perpendicular vector to velocity (90 degree rotation)
+     local perp_x=-ship.vy
+     local perp_y=ship.vx
+     local perp_mag=sqrt(perp_x*perp_x+perp_y*perp_y)
+
+     if perp_mag>0.01 then
+      -- normalize perpendicular vector
+      perp_x=perp_x/perp_mag
+      perp_y=perp_y/perp_mag
+
+      -- determine which perpendicular direction moves away from planet
+      -- test both directions and choose the one that increases distance
+      local test_x=ship.x+perp_x
+      local test_y=ship.y+perp_y
+      local test_dist_sq=(test_x-p.x)*(test_x-p.x)+(test_y-p.y)*(test_y-p.y)
+
+      if test_dist_sq<dist_sq then
+       -- wrong direction, flip it
+       perp_x=-perp_x
+       perp_y=-perp_y
+      end
+
+      -- apply small perpendicular thrust (scaled by how close to collision)
+      local danger_factor=1-(sqrt(closest_dist_sq)/safe_radius)
+      local correction=0.15*danger_factor
+      ship.vx+=perp_x*correction
+      ship.vy+=perp_y*correction
+     end
+    end
+   end
+  end
+ end
+
  -- update ship position
  ship.x+=ship.vx
  ship.y+=ship.vy
