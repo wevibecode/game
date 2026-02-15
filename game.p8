@@ -184,27 +184,79 @@ function _update()
  local demo_turn=0
 
  if demo_mode then
-  -- simple ai: aim toward goal
+  -- improved ai: consider velocity and position
   local goal_dx=goal.x-ship.x
   local goal_dy=goal.y-ship.y
-  local angle_to_goal=atan2(goal_dx,goal_dy)
-  local angle_diff=angle_to_goal-ship.angle
+  local dist_to_goal=sqrt(goal_dx*goal_dx+goal_dy*goal_dy)
+
+  -- calculate desired velocity (velocity needed to reach goal)
+  local desired_vx=goal_dx*0.1
+  local desired_vy=goal_dy*0.1
+
+  -- calculate velocity error
+  local vel_error_x=desired_vx-ship.vx
+  local vel_error_y=desired_vy-ship.vy
+
+  -- calculate gravity influence
+  local total_gx=0
+  local total_gy=0
+  for p in all(planets) do
+   local dx=p.x-ship.x
+   local dy=p.y-ship.y
+   local dist_sq=dx*dx+dy*dy
+   local dist=sqrt(dist_sq)
+   if dist>0.1 then
+    local force=p.mass/dist_sq
+    total_gx+=(dx/dist)*force*0.008
+    total_gy+=(dy/dist)*force*0.008
+   end
+  end
+
+  -- compensate for gravity
+  vel_error_x-=total_gx*3
+  vel_error_y-=total_gy*3
+
+  -- calculate the angle we should thrust
+  local thrust_angle=atan2(vel_error_x,vel_error_y)
+  local angle_diff=thrust_angle-ship.angle
 
   -- normalize angle difference
   while angle_diff>0.5 do angle_diff-=1 end
   while angle_diff<-0.5 do angle_diff+=1 end
 
-  -- turn toward goal
+  -- turn toward thrust direction
   if angle_diff<-0.02 then
    demo_turn=-1
   elseif angle_diff>0.02 then
    demo_turn=1
   end
 
-  -- thrust if fuel available and somewhat aimed
-  if ship.fuel>20 and abs(angle_diff)<0.2 then
-   demo_thrust=true
+  -- calculate current speed
+  local speed=sqrt(ship.vx*ship.vx+ship.vy*ship.vy)
+
+  -- thrust conditions:
+  -- 1. must be aimed in the right direction
+  -- 2. must have fuel
+  -- 3. must need velocity correction (not moving perfectly)
+  -- 4. not too close to goal at high speed (brake!)
+  local vel_error_mag=sqrt(vel_error_x*vel_error_x+vel_error_y*vel_error_y)
+  local should_thrust=false
+
+  if ship.fuel>5 and abs(angle_diff)<0.15 then
+   if dist_to_goal>goal.r*2 then
+    -- far from goal: thrust if we need velocity correction
+    if vel_error_mag>0.2 then
+     should_thrust=true
+    end
+   else
+    -- close to goal: only thrust if moving too fast
+    if speed>1.5 then
+     should_thrust=true
+    end
+   end
   end
+
+  demo_thrust=should_thrust
  end
 
  -- apply thrust
