@@ -36,9 +36,16 @@ won=false
 trail={}
 trail_max=30
 
+-- demo mode
+demo_mode=false
+last_input_time=0
+demo_timeout=300 -- 10 seconds at 30fps
+
 function _init()
  init_level()
  init_stars()
+ last_input_time=0
+ demo_mode=false
 end
 
 function init_stars()
@@ -130,8 +137,31 @@ function init_level()
 end
 
 function _update()
+ -- check for user input
+ local has_input=btn(0) or btn(1) or btn(4)
+
+ if has_input then
+  if demo_mode then
+   -- exit demo mode, reset game
+   demo_mode=false
+   level=1
+   score=0
+   init_level()
+  end
+  last_input_time=0
+ else
+  last_input_time+=1
+  -- enter demo mode after timeout
+  if last_input_time>=demo_timeout and not demo_mode then
+   demo_mode=true
+   level=1
+   score=0
+   init_level()
+  end
+ end
+
  if won then
-  if btnp(4) then
+  if btnp(4) or (demo_mode and t()%2<1) then
    level+=1
    init_level()
   end
@@ -139,16 +169,47 @@ function _update()
  end
 
  if gameover then
-  if btnp(4) then
-   level=1
-   score=0
+  if btnp(4) or (demo_mode and t()%2<1) then
+   if not demo_mode then
+    level=1
+    score=0
+   end
    init_level()
   end
   return
  end
 
+ -- demo ai decisions
+ local demo_thrust=false
+ local demo_turn=0
+
+ if demo_mode then
+  -- simple ai: aim toward goal
+  local goal_dx=goal.x-ship.x
+  local goal_dy=goal.y-ship.y
+  local angle_to_goal=atan2(goal_dx,goal_dy)
+  local angle_diff=angle_to_goal-ship.angle
+
+  -- normalize angle difference
+  while angle_diff>0.5 do angle_diff-=1 end
+  while angle_diff<-0.5 do angle_diff+=1 end
+
+  -- turn toward goal
+  if angle_diff<-0.02 then
+   demo_turn=-1
+  elseif angle_diff>0.02 then
+   demo_turn=1
+  end
+
+  -- thrust if fuel available and somewhat aimed
+  if ship.fuel>20 and abs(angle_diff)<0.2 then
+   demo_thrust=true
+  end
+ end
+
  -- apply thrust
- if btn(4) and ship.fuel>0 then
+ local do_thrust=(demo_mode and demo_thrust) or (not demo_mode and btn(4))
+ if do_thrust and ship.fuel>0 then
   ship.vx+=cos(ship.angle)*ship.thrust
   ship.vy+=sin(ship.angle)*ship.thrust
   ship.fuel-=0.5
@@ -164,8 +225,12 @@ function _update()
  end
 
  -- rotate ship
- if btn(0) then ship.angle-=0.05 end
- if btn(1) then ship.angle+=0.05 end
+ if demo_mode then
+  ship.angle+=demo_turn*0.05
+ else
+  if btn(0) then ship.angle-=0.05 end
+  if btn(1) then ship.angle+=0.05 end
+ end
 
  -- apply gravity from each planet
  for p in all(planets) do
@@ -325,7 +390,11 @@ function _draw()
  print("vel:"..flr(vel*10)/10,2,14,6)
 
  -- controls hint
- print("⬅➡:rotate z:thrust",6,120,5)
+ if demo_mode then
+  print("demo mode - press any key",4,120,10)
+ else
+  print("⬅➡:rotate z:thrust",6,120,5)
+ end
 
  if won then
   rectfill(20,50,108,78,0)
