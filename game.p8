@@ -119,15 +119,15 @@ function init_level()
 
  else
   -- random level
-  local num_planets=3+flr(level/2)
-  num_planets=min(num_planets,6)
+  local num_planets=3+flr(level/3)
+  num_planets=min(num_planets,5)
 
   for i=1,num_planets do
    add(planets,{
     x=20+rnd(88),
     y=40+rnd(60),
-    mass=200+rnd(200),
-    r=5+rnd(4),
+    mass=180+rnd(150),
+    r=5+rnd(3),
     col=8+flr(rnd(8))
    })
   end
@@ -246,8 +246,8 @@ function _update()
    local force=p.mass/dist_sq
 
    -- normalize and apply
-   local ax=(dx/dist)*force*0.01
-   local ay=(dy/dist)*force*0.01
+   local ax=(dx/dist)*force*0.008
+   local ay=(dy/dist)*force*0.008
 
    ship.vx+=ax
    ship.vy+=ay
