@@ -189,9 +189,62 @@ function _update()
   local goal_dy=goal.y-ship.y
   local dist_to_goal=sqrt(goal_dx*goal_dx+goal_dy*goal_dy)
 
+  -- check for danger (collision threats)
+  local danger_x=0
+  local danger_y=0
+  local in_danger=false
+
+  -- predict future position
+  local future_x=ship.x+ship.vx*5
+  local future_y=ship.y+ship.vy*5
+
+  -- check planet collisions
+  for p in all(planets) do
+   local dx=p.x-ship.x
+   local dy=p.y-ship.y
+   local dist=sqrt(dx*dx+dy*dy)
+   local future_dx=p.x-future_x
+   local future_dy=p.y-future_y
+   local future_dist=sqrt(future_dx*future_dx+future_dy*future_dy)
+
+   -- if too close or heading toward planet
+   local danger_threshold=p.r+10
+   if dist<danger_threshold or future_dist<p.r+5 then
+    in_danger=true
+    -- create repulsion vector away from planet
+    danger_x-=dx/dist
+    danger_y-=dy/dist
+   end
+  end
+
+  -- check map edges
+  local edge_margin=10
+  if ship.x<edge_margin or future_x<5 then
+   in_danger=true
+   danger_x+=1
+  end
+  if ship.x>128-edge_margin or future_x>123 then
+   in_danger=true
+   danger_x-=1
+  end
+  if ship.y<edge_margin or future_y<5 then
+   in_danger=true
+   danger_y+=1
+  end
+  if ship.y>128-edge_margin or future_y>123 then
+   in_danger=true
+   danger_y-=1
+  end
+
   -- calculate desired velocity (velocity needed to reach goal)
   local desired_vx=goal_dx*0.1
   local desired_vy=goal_dy*0.1
+
+  -- if in danger, prioritize escape over goal
+  if in_danger then
+   desired_vx=danger_x*2
+   desired_vy=danger_y*2
+  end
 
   -- calculate velocity error
   local vel_error_x=desired_vx-ship.vx
@@ -243,7 +296,10 @@ function _update()
   local should_thrust=false
 
   if ship.fuel>5 and abs(angle_diff)<0.15 then
-   if dist_to_goal>goal.r*2 then
+   if in_danger then
+    -- in danger: always thrust to escape
+    should_thrust=true
+   elseif dist_to_goal>goal.r*2 then
     -- far from goal: thrust if we need velocity correction
     if vel_error_mag>0.2 then
      should_thrust=true
