@@ -324,10 +324,26 @@ function _draw()
  for p in all(planets) do
   -- planet body
   circfill(p.x,p.y,p.r,p.col)
-  -- highlight
-  circfill(p.x-1,p.y-1,p.r/2,7)
-  -- shadow
-  circfill(p.x+1,p.y+1,p.r/3,0)
+
+  -- surface details (craters/terrain)
+  for i=1,3 do
+   local cx=p.x+(rnd(p.r*1.4)-p.r*0.7)
+   local cy=p.y+(rnd(p.r*1.4)-p.r*0.7)
+   local dx=cx-p.x
+   local dy=cy-p.y
+   -- only draw if within planet
+   if dx*dx+dy*dy<p.r*p.r then
+    circfill(cx,cy,1+rnd(1.5),p.col-1)
+   end
+  end
+
+  -- atmospheric highlight (crescent)
+  local hl_size=p.r*0.6
+  circfill(p.x-p.r*0.3,p.y-p.r*0.3,hl_size,7)
+  circfill(p.x-p.r*0.3+1,p.y-p.r*0.3+1,hl_size*0.7,p.col+1)
+
+  -- terminator shadow (darker edge)
+  circ(p.x+p.r*0.3,p.y+p.r*0.3,p.r*0.8,p.col-2)
 
   -- draw gravity field (subtle)
   circ(p.x,p.y,p.r+3,p.col-1)
