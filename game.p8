@@ -31,6 +31,8 @@ particles={}
 -- game state
 score=0
 level=1
+lives=3
+max_level_reached=0 -- track highest level for bonus lives
 gameover=false
 won=false
 trail={}
@@ -46,6 +48,8 @@ function _init()
  init_stars()
  last_input_time=0
  demo_mode=true
+ lives=3
+ max_level_reached=0
 end
 
 function init_stars()
@@ -146,6 +150,8 @@ function _update()
    demo_mode=false
    level=1
    score=0
+   lives=3
+   max_level_reached=0
    init_level()
   end
   last_input_time=0
@@ -156,6 +162,8 @@ function _update()
    demo_mode=true
    level=1
    score=0
+   lives=3
+   max_level_reached=0
    init_level()
   end
  end
@@ -163,6 +171,11 @@ function _update()
  if won then
   if btnp(4) or (demo_mode and t()%2<1) then
    level+=1
+   -- check for bonus life at levels 3, 6, 9, etc.
+   if level>max_level_reached and level%3==0 then
+    lives+=1
+   end
+   max_level_reached=max(max_level_reached,level)
    init_level()
   end
   return
@@ -170,10 +183,22 @@ function _update()
 
  if gameover then
   if btnp(4) or (demo_mode and t()%2<1) then
-   if not demo_mode then
-    level=1
-    score=0
+   if lives<=0 then
+    -- true game over - restart everything
+    if demo_mode then
+     level=1
+     score=0
+     lives=3
+     max_level_reached=0
+    else
+     -- player mode: full restart
+     level=1
+     score=0
+     lives=3
+     max_level_reached=0
+    end
    end
+   -- if lives remain, just restart current level
    init_level()
   end
   return
@@ -413,6 +438,7 @@ function _update()
 
   -- check collision with planet
   if dist<p.r+2 then
+   lives-=1
    gameover=true
    return
   end
@@ -444,6 +470,7 @@ function _update()
  -- check bounds
  if ship.x<0 or ship.x>128 or
     ship.y<0 or ship.y>128 then
+  lives-=1
   gameover=true
   return
  end
@@ -532,6 +559,7 @@ function _draw()
  -- ui
  print("level:"..level,2,2,7)
  print("score:"..score,2,8,7)
+ print("lives:"..lives,2,14,7)
 
  -- fuel bar
  local fuel_pct=ship.fuel/ship.max_fuel
@@ -541,7 +569,7 @@ function _draw()
 
  -- velocity indicator
  local vel=sqrt(ship.vx*ship.vx+ship.vy*ship.vy)
- print("vel:"..flr(vel*10)/10,2,14,6)
+ print("vel:"..flr(vel*10)/10,2,20,6)
 
  -- controls hint
  if demo_mode then
@@ -560,10 +588,17 @@ function _draw()
 
  if gameover then
   rectfill(20,50,108,78,0)
-  rect(20,50,108,78,8)
-  print("crashed!",42,56,8)
-  print("score:"..score,42,64,7)
-  print("press z",44,70,6)
+  if lives<=0 then
+   rect(20,50,108,78,8)
+   print("game over!",38,56,8)
+   print("final score:"..score,32,64,7)
+   print("press z",44,70,6)
+  else
+   rect(20,50,108,78,8)
+   print("crashed!",42,56,8)
+   print("lives:"..lives,46,64,7)
+   print("press z",44,70,6)
+  end
  end
 end
 
