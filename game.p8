@@ -45,7 +45,7 @@ function _init()
  init_level()
  init_stars()
  last_input_time=0
- demo_mode=false
+ demo_mode=true
 end
 
 function init_stars()
@@ -63,7 +63,7 @@ function init_level()
  trail={}
  ship.x=64
  ship.y=20
- ship.vx=0
+ ship.vx=0.2
  ship.vy=0
  ship.angle=0
  ship.fuel=100
