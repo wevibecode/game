@@ -628,24 +628,6 @@ function _draw()
   line(sx,sy,thrust_x,thrust_y,flame_col)
  end
 
- -- fuel meter bar below ship
- local bar_y=sy+8
- local bar_x=sx-10
- local bar_width=20
- local fuel_pct_ship=ship.fuel/ship.max_fuel
-
- -- background bar
- rect(bar_x,bar_y,bar_x+bar_width,bar_y+2,6)
-
- -- fuel level with color coding
- local fuel_col=11 -- green
- if fuel_pct_ship<0.5 then fuel_col=10 end -- yellow
- if fuel_pct_ship<0.25 then fuel_col=8 end -- red
-
- if fuel_pct_ship>0 then
-  rectfill(bar_x+1,bar_y+1,bar_x+flr(fuel_pct_ship*bar_width),bar_y+1,fuel_col)
- end
-
  -- ui
  print("level:"..level,2,2,7)
  print("score:"..score,2,8,7)
