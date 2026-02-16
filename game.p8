@@ -143,8 +143,8 @@ function init_level()
   goal.y=110
  end
 
- -- spawn fuel pickups (2-4 per level)
- local num_pickups=2+flr(rnd(3))
+ -- spawn fuel pickups (1 per level)
+ local num_pickups=1
  for i=1,num_pickups do
   -- avoid spawning too close to planets or ship
   local valid=false
