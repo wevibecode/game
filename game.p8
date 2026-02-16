@@ -28,6 +28,9 @@ stars={}
 -- particles for thrust
 particles={}
 
+-- fuel pickups
+fuel_pickups={}
+
 -- game state
 score=0
 level=1
@@ -75,6 +78,7 @@ function init_level()
  won=false
 
  planets={}
+ fuel_pickups={}
 
  if level==1 then
   -- simple: one planet in center
@@ -137,6 +141,43 @@ function init_level()
   end
   goal.x=64
   goal.y=110
+ end
+
+ -- spawn fuel pickups (2-4 per level)
+ local num_pickups=2+flr(rnd(3))
+ for i=1,num_pickups do
+  -- avoid spawning too close to planets or ship
+  local valid=false
+  local px,py
+  for attempt=1,20 do
+   px=15+rnd(98)
+   py=30+rnd(80)
+   valid=true
+   -- check distance from planets
+   for p in all(planets) do
+    local dx=p.x-px
+    local dy=p.y-py
+    local dist=sqrt(dx*dx+dy*dy)
+    if dist<p.r+15 then
+     valid=false
+     break
+    end
+   end
+   -- check distance from ship start
+   local sdx=ship.x-px
+   local sdy=ship.y-py
+   if sqrt(sdx*sdx+sdy*sdy)<20 then
+    valid=false
+   end
+   if valid then break end
+  end
+  if valid then
+   add(fuel_pickups,{
+    x=px,
+    y=py,
+    bob=rnd(1) -- bobbing animation offset
+   })
+  end
  end
 end
 
@@ -475,6 +516,19 @@ function _update()
   return
  end
 
+ -- check fuel pickup collection
+ for pickup in all(fuel_pickups) do
+  local pdx=pickup.x-ship.x
+  local pdy=pickup.y-ship.y
+  local pdist=sqrt(pdx*pdx+pdy*pdy)
+  if pdist<6 then
+   -- collect pickup
+   ship.fuel=min(ship.fuel+20,ship.max_fuel)
+   score+=10
+   del(fuel_pickups,pickup)
+  end
+ end
+
  -- check goal
  local gdx=goal.x-ship.x
  local gdy=goal.y-ship.y
@@ -523,6 +577,22 @@ function _draw()
   if fade<0.7 then col=9 end
   if fade<0.4 then col=8 end
   pset(pt.x,pt.y,col)
+ end
+
+ -- draw fuel pickups
+ for pickup in all(fuel_pickups) do
+  -- bobbing animation
+  local bob_offset=sin(t()*2+pickup.bob)*2
+  local py=pickup.y+bob_offset
+  -- draw fuel can/container
+  circfill(pickup.x,py,3,10) -- yellow circle
+  circ(pickup.x,py,3,9) -- orange outline
+  -- small "F" or fuel indicator
+  pset(pickup.x-1,py-1,7)
+  pset(pickup.x,py-1,7)
+  pset(pickup.x-1,py,7)
+  pset(pickup.x,py,7)
+  pset(pickup.x-1,py+1,7)
  end
 
  -- draw goal
