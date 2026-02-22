@@ -139,13 +139,37 @@ function init_level()
   end
 
   for i=1,num_planets do
-   add(planets,{
-    x=20+rnd(88),
-    y=40+rnd(60),
-    mass=180+rnd(150),
-    r=5+rnd(3),
-    col=8+flr(rnd(8))
-   })
+   local valid=false
+   local px,py,pr,pmass,pcol
+   for attempt=1,30 do
+    px=20+rnd(88)
+    py=40+rnd(60)
+    pr=5+rnd(3)
+    pmass=180+rnd(150)
+    pcol=8+flr(rnd(8))
+    valid=true
+    -- check if this planet overlaps with existing planets
+    for p in all(planets) do
+     local dx=p.x-px
+     local dy=p.y-py
+     local dist=sqrt(dx*dx+dy*dy)
+     -- planets must be separated by sum of their radii plus buffer
+     if dist<p.r+pr+8 then
+      valid=false
+      break
+     end
+    end
+    if valid then break end
+   end
+   if valid then
+    add(planets,{
+     x=px,
+     y=py,
+     mass=pmass,
+     r=pr,
+     col=pcol
+    })
+   end
   end
   goal.x=64
   goal.y=110
