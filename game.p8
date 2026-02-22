@@ -126,9 +126,17 @@ function init_level()
   goal.y=110
 
  else
-  -- random level
-  local num_planets=3+flr(level/3)
-  num_planets=min(num_planets,5)
+  -- random level with progressive planet scaling
+  local num_planets=1
+  if level>=4 and level<=6 then
+   num_planets=2
+  elseif level>=7 and level<=9 then
+   num_planets=3
+  elseif level>=10 and level<=12 then
+   num_planets=4
+  elseif level>=13 then
+   num_planets=5
+  end
 
   for i=1,num_planets do
    add(planets,{
