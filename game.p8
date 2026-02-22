@@ -82,9 +82,10 @@ function init_level()
 
  if level==1 then
   -- simple: one planet in center
+  local r=8
   add(planets,{
    x=64,y=64,
-   mass=400,r=8,
+   mass=r*r*6.25,r=r,
    col=12
   })
   goal.x=64
@@ -92,14 +93,16 @@ function init_level()
 
  elseif level==2 then
   -- two planets
+  local r1=7
   add(planets,{
    x=40,y=60,
-   mass=300,r=7,
+   mass=r1*r1*6.25,r=r1,
    col=12
   })
+  local r2=7
   add(planets,{
    x=88,y=68,
-   mass=300,r=7,
+   mass=r2*r2*6.25,r=r2,
    col=11
   })
   goal.x=64
@@ -107,19 +110,22 @@ function init_level()
 
  elseif level==3 then
   -- three planets in triangle
+  local r1=6
   add(planets,{
    x=64,y=50,
-   mass=250,r=6,
+   mass=r1*r1*6.25,r=r1,
    col=12
   })
+  local r2=6
   add(planets,{
    x=40,y=80,
-   mass=250,r=6,
+   mass=r2*r2*6.25,r=r2,
    col=11
   })
+  local r3=6
   add(planets,{
    x=88,y=80,
-   mass=250,r=6,
+   mass=r3*r3*6.25,r=r3,
    col=8
   })
   goal.x=64
@@ -140,12 +146,11 @@ function init_level()
 
   for i=1,num_planets do
    local valid=false
-   local px,py,pr,pmass,pcol
+   local px,py,pr,pcol
    for attempt=1,30 do
     px=20+rnd(88)
     py=40+rnd(60)
     pr=5+rnd(3)
-    pmass=180+rnd(150)
     pcol=8+flr(rnd(8))
     valid=true
     -- check if this planet overlaps with existing planets
@@ -165,7 +170,7 @@ function init_level()
     add(planets,{
      x=px,
      y=py,
-     mass=pmass,
+     mass=pr*pr*6.25,
      r=pr,
      col=pcol
     })
