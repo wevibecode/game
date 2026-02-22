@@ -589,12 +589,16 @@ function _draw()
   pset(s.x,s.y,col)
  end
 
- -- draw trail
+ -- draw trail with fading effect
  for i=1,#trail do
   local fade=i/#trail
-  local col=1
-  if fade>0.7 then col=5 end
-  if fade>0.85 then col=6 end
+  -- smooth color fade from dark blue to light blue/white
+  local col=1 -- dark blue (oldest)
+  if fade>0.3 then col=2 end -- dark purple
+  if fade>0.5 then col=13 end -- light purple
+  if fade>0.65 then col=5 end -- gray
+  if fade>0.8 then col=6 end -- light gray
+  if fade>0.92 then col=7 end -- white (newest)
   pset(trail[i].x,trail[i].y,col)
  end
 
