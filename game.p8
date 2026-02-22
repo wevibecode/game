@@ -528,13 +528,19 @@ function _update()
  ship.x+=ship.vx
  ship.y+=ship.vy
 
- -- add to trail
+ -- add to trail with lifetime
  add(trail,{
   x=ship.x,
-  y=ship.y
+  y=ship.y,
+  age=0
  })
  while #trail>trail_max do
   deli(trail,1)
+ end
+
+ -- age trail points
+ for t in all(trail) do
+  t.age+=1
  end
 
  -- update particles
@@ -601,17 +607,32 @@ function _draw()
   pset(s.x,s.y,col)
  end
 
- -- draw trail with fading effect
+ -- draw trail with fading particle effect
  for i=1,#trail do
+  local t=trail[i]
   local fade=i/#trail
-  -- smooth color fade from dark blue to light blue/white
+  local alpha=fade -- 0 (oldest) to 1 (newest)
+
+  -- smooth color fade with better progression
   local col=1 -- dark blue (oldest)
-  if fade>0.3 then col=2 end -- dark purple
-  if fade>0.5 then col=13 end -- light purple
-  if fade>0.65 then col=5 end -- gray
-  if fade>0.8 then col=6 end -- light gray
-  if fade>0.92 then col=7 end -- white (newest)
-  pset(trail[i].x,trail[i].y,col)
+  if alpha>0.2 then col=1 end -- dark blue
+  if alpha>0.35 then col=2 end -- dark purple
+  if alpha>0.5 then col=13 end -- light purple
+  if alpha>0.65 then col=6 end -- light gray
+  if alpha>0.75 then col=12 end -- light blue
+  if alpha>0.85 then col=7 end -- white (newest)
+
+  -- draw point (older points fade out)
+  if alpha>0.15 then
+   pset(t.x,t.y,col)
+   -- add nearby pixels for newest trail points for particle effect
+   if alpha>0.7 and rnd(1)>0.5 then
+    pset(t.x+1,t.y,col)
+   end
+   if alpha>0.8 and rnd(1)>0.5 then
+    pset(t.x,t.y+1,col)
+   end
+  end
  end
 
  -- draw planets
