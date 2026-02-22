@@ -40,6 +40,7 @@ gameover=false
 won=false
 trail={}
 trail_max=30
+timer=300 -- countdown timer (10 seconds at 30fps)
 
 -- demo mode
 demo_mode=false
@@ -76,6 +77,7 @@ function init_level()
  ship.fuel=100
  gameover=false
  won=false
+ timer=300 -- reset timer (10 seconds at 30fps)
 
  planets={}
  fuel_pickups={}
@@ -578,6 +580,16 @@ function _update()
   -- refill fuel when landing on goal
   ship.fuel=ship.max_fuel
  end
+
+ -- update timer (only when playing)
+ if not gameover and not won then
+  timer-=1
+  if timer<=0 then
+   lives-=1
+   gameover=true
+   return
+  end
+ end
 end
 
 function _draw()
@@ -669,10 +681,35 @@ function _draw()
   line(sx,sy,thrust_x,thrust_y,flame_col)
  end
 
+ -- fuel bar below ship
+ local bar_width=20
+ local bar_height=3
+ local bar_x=sx-bar_width/2
+ local bar_y=sy+8
+ local fuel_pct_ship=ship.fuel/ship.max_fuel
+
+ -- background bar
+ rectfill(bar_x,bar_y,bar_x+bar_width,bar_y+bar_height,1)
+ -- fuel level
+ local fuel_bar_width=bar_width*fuel_pct_ship
+ local fuel_col=11 -- green
+ if fuel_pct_ship<0.3 then fuel_col=8 end -- red when low
+ if fuel_pct_ship<0.5 and fuel_pct_ship>=0.3 then fuel_col=10 end -- yellow when medium
+ rectfill(bar_x,bar_y,bar_x+fuel_bar_width,bar_y+bar_height,fuel_col)
+ -- border
+ rect(bar_x,bar_y,bar_x+bar_width,bar_y+bar_height,6)
+
  -- ui
  print("level:"..level,2,2,7)
  print("score:"..score,2,8,7)
  print("lives:"..lives,2,14,7)
+
+ -- timer display
+ local seconds=flr(timer/30)
+ local timer_col=7
+ if seconds<3 then timer_col=8 end -- red when low
+ if seconds<5 and seconds>=3 then timer_col=10 end -- yellow when medium
+ print("time:"..seconds,50,2,timer_col)
 
  -- fuel bar
  local fuel_pct=ship.fuel/ship.max_fuel
